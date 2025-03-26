@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  langchain_service:
+    build: ./langchain_service
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    env_file:
+      - .env
+
