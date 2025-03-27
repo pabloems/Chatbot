@@ -7,4 +7,6 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "posts#index"
+  root 'chatbot#index'
+  post 'chatbot/ask', to: 'chatbot#ask'
 end

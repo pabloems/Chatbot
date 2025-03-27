@@ -47,3 +47,8 @@ group :development, :test do
 end
 
 
+gem 'httparty'
+gem "stimulus-rails", "~> 1.3"
+gem "importmap-rails", "~> 2.1"
+gem "tailwindcss-rails", "~> 4.2"
+gem "sprockets-rails"
