@@ -1,7 +1,6 @@
 
 class ChatbotController < ApplicationController
   def index
-    render "index"
   end
   
   def ask

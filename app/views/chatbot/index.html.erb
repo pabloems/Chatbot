@@ -1,31 +1,6 @@
-<h4>Chatbot</h4>
-
-<div id="chatbox">
-  <div id="messages"></div>
-  <input type="text" id="user-input" placeholder="Escribe tu pregunta aquí...">
-  <button id="send-button">Enviar</button>
+<div class="container mx-auto p-4">
+  <h4 class="text-2xl font-bold mb-4">Chatbot 4T</h4>
 </div>
 
-<script>
-  document.getElementById('send-button').addEventListener('click', async function() {
-    const userInput = document.getElementById('user-input').value;
-    const messagesDiv = document.getElementById('messages');
 
-    if (!userInput) return;
 
-    messagesDiv.innerHTML += `<p><strong>Tú:</strong> ${userInput}</p>`;
-
-    const response = await fetch('/chatbot/ask', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: userInput })
-    });
-
-    const data = await response.json();
-    const botResponse = data.responses[0]?.content || "Error en la respuesta.";
-
-    messagesDiv.innerHTML += `<p><strong>Bot:</strong> ${botResponse}</p>`;
-
-    document.getElementById('user-input').value = '';
-  });
-</script>
