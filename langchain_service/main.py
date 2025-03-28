@@ -24,7 +24,7 @@ Contexto de la conversación:
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.0-flash",
-    temperature=0.3,
+    temperature=0.2,
     convert_system_message_to_human=True,
     google_api_key=os.getenv("GOOGLE_API_KEY")
 )
