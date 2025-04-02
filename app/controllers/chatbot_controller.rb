@@ -10,7 +10,8 @@ class ChatbotController < ApplicationController
       }
       response = HTTParty.post("#{ENV['DEV_PYTHON_MICROSERVICE_URL']}/extract_profile/",
         body: form_data,
-        multipart: true
+        multipart: true,
+        headers: { "Content-Type" => "multipart/form-data" }
       )
       render json: response.parsed_response
     else
@@ -30,15 +31,19 @@ class ChatbotController < ApplicationController
       else
         base_url = ENV['JOB_API_URL_PRODUCTION']
       end
-      response = HTTParty.post("#{base_url}/api/v3/bci_portals/_search",
+      request_options = {
         headers: {
           "Content-Type" => "application/json",
           "Accept" => "application/json"
-        },
+        }
+      }
       if Rails.env.development?
-        verify: false,
-        verify_peer: false
+        request_options[:verify] = false
+        request_options[:verify_peer] = false
       end
+      response = HTTParty.post(
+        "#{base_url}/api/v3/bci_portals/_search",
+        request_options
       )
       if response.code == 200
         raw_jobs = response["hits"]["hits"]
@@ -52,21 +57,20 @@ class ChatbotController < ApplicationController
             department: source["bci_department_description"],
             excluding_requirements: source["excluding_requirements"]&.gsub(/<\/?[^>]*>/, ""), # used this regex for clean html code
             desirable_knowledge: source["desirable_knowledge"]&.gsub(/<\/?[^>]*>/, ""), # used this regex for clean html code
-            public_url: source["public_url"],
-            position_level: source["position_level_description"]
+            public_url: base_url + source["public_url"],
+            position_level: source["position_level_description"],
+            archetype_text: source["archetype_text"],
+            address: source["address"],
+            published_at_date_text: source["published_at_date_text"]
           }
         end
-  
         region = if profile_data["region"].present?
           profile_data["region"]
         else
           extract_region_from_profile(profile_data["profile"])
         end
-
         Rails.logger.info("Profile: #{profile_data['profile']}")
-        Rails.logger.info("Región detectada: #{region}")
-        Rails.logger.info("number of jobs: #{jobs.length}")
-    
+        Rails.logger.info("Región: #{region}")
         filter_response = HTTParty.post("#{ENV['DEV_PYTHON_MICROSERVICE_URL']}/filter_jobs",
         body: {
           profile: profile_data["profile"],
@@ -79,20 +83,15 @@ class ChatbotController < ApplicationController
       )
         if filter_response.code == 200
           matched_jobs = filter_response["matched_jobs"] || []
-          
           filtered_jobs = matched_jobs.map do |match|
             job = jobs.find { |j| j[:id].to_s == match["job_id"].to_s }
             next unless job
-  
             job.merge({
               match_score: match["match_score"],
               match_reasons: match["match_reasons"],
-              recommendations: match["recommendations"]
             })
           end.compact
-  
           filtered_jobs.sort_by! { |job| -job[:match_score] }
-  
           render json: { 
             jobs: filtered_jobs,
             total_jobs: filtered_jobs.length
@@ -104,7 +103,7 @@ class ChatbotController < ApplicationController
       else
         render json: { error: "Error al conectar con el servicio de empleos: #{response.code}" }, status: 500
       end
-      
+
     rescue => e
       Rails.logger.error("Error in search_jobs: #{e.message}")
       Rails.logger.error(e.backtrace.join("\n"))
@@ -129,6 +128,7 @@ class ChatbotController < ApplicationController
       "arica" => "Región de Arica y Parinacota",
       "parinacota" => "Región de Arica y Parinacota",
       "tarapacá" => "Región de Tarapacá",
+      "tarapaca" => "Región de Tarapacá",
       "antofagasta" => "Región de Antofagasta",
       "atacama" => "Región de Atacama",
       "coquimbo" => "Región de Coquimbo",
@@ -171,11 +171,9 @@ class ChatbotController < ApplicationController
       "Región de Aysén",
       "Región de Magallanes"
     ]
-  
     regiones_chile.each do |region|
       return region if profile.include?(region)
     end
-  
     nil
   end
 

@@ -12,13 +12,32 @@ import docx2txt
 import os
 import google.generativeai as genai
 import json
-import re
 
 app = FastAPI()
 class Message(BaseModel):
     content: str
 class ChatRequest(BaseModel):
     messages: List[Message]
+class JobMatchRequest(BaseModel):
+    profile: str
+    jobs: List[dict]
+    region: Optional[str] = None
+# analyze curriculum and extract professional profile
+class ProfileRequest(BaseModel):
+    file: UploadFile
+    user_message: str
+
+def extract_text_from_pdf(file: io.BytesIO) -> str:
+    text = ""
+    pdf_reader = PyPDF2.PdfReader(file)
+    for page in pdf_reader.pages:
+        text += page.extract_text()
+    return text
+
+def extract_text_from_docx(file: io.BytesIO) -> str:
+    text = docx2txt.process(file)
+    return text
+
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
@@ -84,21 +103,6 @@ async def health_check():
         "system_prompt": "Configurado"
     }
 
-def extract_text_from_pdf(file: io.BytesIO) -> str:
-    text = ""
-    pdf_reader = PyPDF2.PdfReader(file)
-    for page in pdf_reader.pages:
-        text += page.extract_text()
-    return text
-
-def extract_text_from_docx(file: io.BytesIO) -> str:
-    text = docx2txt.process(file)
-    return text
-
-# analyze curriculum and extract professional profile
-class ProfileRequest(BaseModel):
-    file: UploadFile
-    user_message: str
 
 @app.post("/extract_profile/")
 async def extract_profile(file: UploadFile = File(...)):
@@ -119,6 +123,7 @@ async def extract_profile(file: UploadFile = File(...)):
         Si no encuentras una región específica pero hay información que sugiere una (como ciudad o zona), 
         devuelve la región correspondiente.
         Si no hay información suficiente, responde "No especificada".
+        Si un usuario proporciona indicaciones que no apuntan a buscar empleo, responde "No estoy entrenado para ello".
         
         Currículum:
         {resume_text}
@@ -146,11 +151,6 @@ async def extract_profile(file: UploadFile = File(...)):
     except Exception as e:
         print(f"Error detallado: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-class JobMatchRequest(BaseModel):
-    profile: str
-    jobs: List[dict]
-    region: Optional[str] = None
 
 @app.post("/filter_jobs")
 async def filter_jobs(request: JobMatchRequest):
@@ -185,6 +185,7 @@ async def filter_jobs(request: JobMatchRequest):
         {jobs_context}
 
         Analiza cada oferta y determina su compatibilidad basándote en:
+        Si un usuario proporciona indicaciones que no apuntan a buscar empleo, responde "No estoy entrenado para ello".
         1. Coincidencia regional:
            - Si la región del candidato está especificada y coincide: 40 puntos
            - Si la región no está especificada: 20 puntos (considerar como flexible)
@@ -202,10 +203,6 @@ async def filter_jobs(request: JobMatchRequest):
                         "Coincidencia regional: [detalles]",
                         "Coincidencia de requisitos: [detalles]",
                         "Coincidencia de conocimientos: [detalles]"
-                    ],
-                    "recommendations": [
-                        "recomendación específica 1",
-                        "recomendación específica 2"
                     ]
                 }}
             ]
@@ -213,8 +210,12 @@ async def filter_jobs(request: JobMatchRequest):
         """
 
         response = llm.invoke(prompt)
+        print(f"la respuesta es: {response}")
         
         try:
+            if not response.content:
+                print("Error: response.content ir None or False")
+                return {"matched_jobs": []}
             # Clean the response of any markdown or additional text
             response_text = response.content.strip()
             
@@ -226,13 +227,10 @@ async def filter_jobs(request: JobMatchRequest):
             
             # delete "json" if exists after ```
             response_text = response_text.replace("```json", "").replace("```", "").strip()
-            
-            
+
             matched_jobs = json.loads(response_text)
-            
             if not isinstance(matched_jobs, dict) or "matched_jobs" not in matched_jobs:
                 matched_jobs = {"matched_jobs": []}
-            
             return matched_jobs
 
         except json.JSONDecodeError as e:

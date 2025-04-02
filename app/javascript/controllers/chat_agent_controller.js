@@ -9,7 +9,7 @@ export default class extends Controller {
       messagesContainer.className = 'flex-1 overflow-y-auto p-4 flex flex-col space-y-2'
       this.interfaceTarget.insertBefore(messagesContainer, this.interfaceTarget.lastElementChild)
     }
-    this.addMessage("¡Hola! Soy tu asistente de empleabilidad 4T. Podemos ayudarte a encontrar un trabajo que se ajuste a tu perfil, para ello necesitamos que nos adjuntes tu currículum e indiques en que región te encuentras.", "bot");
+    this.addMessage("¡Hola! Soy tu asistente de empleabilidad 4T. Podemos ayudarte a encontrar un trabajo que se ajuste a tu perfil, para ello necesitamos que nos adjuntes tu currículum e indiques en que región de Chile te encuentras.", "bot");
   }
 
   toggleChat() {
@@ -55,19 +55,18 @@ export default class extends Controller {
 
   addMessage(content, type) {
     const messageDiv = document.createElement('div')
-    messageDiv.className = type === 'user' 
-      ? 'flex justify-end w-full'
-      : 'flex justify-start w-full'
-
+    messageDiv.className = 'flex w-full';
+    if (type === 'user') {
+      messageDiv.style.justifyContent = 'flex-end';
+    } else {
+      messageDiv.style.justifyContent = 'flex-start';
+    }
     const bubble = document.createElement('div')
     bubble.className = type === 'user'
       ? 'bg-blue-500 text-white rounded-lg py-2 px-4 max-w-[75%] break-words'
-      : 'rounded-lg py-2 px-4 max-w-[75%] break-words '
+      : 'rounded-lg py-2 px-4 max-w-[75%] break-words justify-end'
       if (type !== 'user') {
         bubble.style.backgroundColor = 'rgb(243, 244, 246)';
-      }
-      if (type == 'user') {
-        bubble.style.justifyContent = 'end';
       }
       bubble.style.marginTop = '0.30rem';
       bubble.style.marginBottom = '0.30rem';
@@ -83,6 +82,7 @@ export default class extends Controller {
   async sendMessage() {
     const message = this.inputTarget.value.trim();
     const file = this.fileInputTarget.files[0];
+    this.disableInput();
 
     if (message) {
       this.addMessage(message, 'user');
@@ -105,27 +105,22 @@ export default class extends Controller {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-
         const data = await response.json();
         const profile = data.profile;
         console.log(data, "datitos");
-
         loadingMessage.remove();
-
         this.addMessage("📋 Resumen del Perfil Profesional:", "bot");
         this.addMessage(profile, "bot");
         
         setTimeout(() => {
           this.addMessage("Buscaremos las mejores opciones de empleo para ti", "bot");
-          
           this.disableInput();
-          
           this.searchJobs(data);
         }, 1000);
 
       } catch (error) {
         console.error('Error detallado:', error);
-        this.addMessage("Lo siento, ocurrió un error al subir el archivo.", 'bot');
+        this.addMessage("Lo siento, ocurrió un error al subir el archivo. Es posible que el archivo no sea un PDF o DOCX.", 'bot');
       }
     } else if (message) {
       try {
@@ -191,7 +186,7 @@ export default class extends Controller {
       });
       
     } catch (error) {
-      console.error('Error al buscar empleos:', error);
+      console.error('error in search jobss:', error);
       this.addMessage("Lo siento, ocurrió un error al buscar empleos.", 'bot');
       this.enableInput();
     }
@@ -254,68 +249,32 @@ export default class extends Controller {
         </div>
     `;  
     jobs.forEach((job) => {
-      const matchScoreClass = job.match_score >= 80 ? 'bg-green-100 text-green-800' : 
-                            job.match_score >= 70 ? 'bg-blue-100 text-blue-800' : 
-                            'bg-yellow-100 text-yellow-800';
-  
-      content += `
-        <div class="bg-white rounded-lg p-3 border border-gray-200 hover:border-blue-300 transition-colors">
-          <div class="flex justify-between items-start">
-            <div class="font-semibold text-blue-600">${job.title}</div>
-            <div class="text-xs ${matchScoreClass} px-2 py-1 rounded">
-              ${job.match_score}% Match
-            </div>
+      content += `   
+        <div style="margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <div style="display: flex; flex-direction: column;">
+            ${job && job.title ? `<span style="font-size: 1rem; color: #6B7280; margin-bottom: 0.25rem;">
+              💼 ${job.title}
+            </span>` : ''}
+            ${job && job.archetype_text ? `<span style="font-size: 0.75rem; color: #6B7280; margin-bottom: 0.25rem;">
+              🏢 Modalidad: ${job.archetype_text}
+            </span>` : ''}
+            ${job && job.address ? `<span style="font-size: 0.75rem; color: #6B7280; margin-bottom: 0.25rem;">
+              📍 ${job.address}
+            </span>` : ''}
+            ${job && job.published_at_date_text ? `<span style="font-size: 0.75rem; color: #6B7280; margin-bottom: 0.25rem;">
+              📅 Publicada el: ${job.published_at_date_text}
+            </span>` : ''}
           </div>
-          
-          <div class="text-sm text-gray-600">${job.company}</div>
-          <div class="mt-1 text-sm">${job.description}</div>
-          
-          ${job.match_reasons ? `
-            <div class="mt-2">
-              <div class="text-xs font-semibold text-gray-700">Razones de coincidencia:</div>
-              <ul class="list-disc list-inside text-xs text-gray-600">
-                ${job.match_reasons.map(reason => `<li>${reason}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
-          
-          ${job.recommendations ? `
-            <div class="mt-2">
-              <div class="text-xs font-semibold text-gray-700">Recomendaciones:</div>
-              <ul class="list-disc list-inside text-xs text-gray-600">
-                ${job.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
-          
-          <div class="mt-2 flex justify-between items-center">
-            <div>
-              <span class="text-xs text-gray-500">
-                <i class="fas fa-map-marker-alt"></i> ${job.region}
-              </span>
-              <span class="text-xs text-gray-500 ml-2">
-                <i class="fas fa-calendar"></i> Cierra: ${job.close_date}
-              </span>
-            </div>
-            <button class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm transition-colors" 
-                    onclick="window.open('${job.public_url}', '_blank')">
-              Ver oferta
-            </button>
-          </div>
-        </div>
-      `;
-    });
-
-    if (totalJobs > jobs.length) {
-      content += `
-        <div class="text-center mt-4">
-          <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md text-sm transition-colors">
-            Ver ${totalJobs - jobs.length} ofertas más
+          <button 
+            style="background-color: #3B82F6; color: white; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.875rem; transition: background-color 0.2s; cursor: pointer;"
+            onmouseover="this.style.backgroundColor='#2563EB'"
+            onmouseout="this.style.backgroundColor='#3B82F6'"
+            onclick="window.open('${job.public_url}', '_blank')">
+            Ver oferta
           </button>
         </div>
       `;
-    }
-    
+    });
     content += '</div>';
     
     bubble.innerHTML = content;
