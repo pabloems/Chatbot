@@ -46,7 +46,7 @@ group :development, :test do
   gem "rubocop-rails-omakase", require: false
 end
 
-
+gem 'dotenv-rails'
 gem 'httparty'
 gem "stimulus-rails", "~> 1.3"
 gem "importmap-rails", "~> 2.1"

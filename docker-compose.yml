@@ -5,8 +5,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - JOB_API_URL=${JOB_API_URL}
     env_file:
       - .env
 
