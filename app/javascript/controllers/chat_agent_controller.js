@@ -121,6 +121,7 @@ export default class extends Controller {
       } catch (error) {
         console.error('Error detallado:', error);
         this.addMessage("Lo siento, ocurrió un error al subir el archivo. Es posible que el archivo no sea un PDF o DOCX.", 'bot');
+        this.enableInput();
       }
     } else if (message) {
       try {
@@ -142,9 +143,11 @@ export default class extends Controller {
         if (data.file_url) {
           this.addFileMessage(data.file_url, 'bot');
         }
+        this.enableInput();
       } catch (error) {
         console.error('Error detallado:', error);
         this.addMessage("Lo siento, ocurrió un error al procesar tu mensaje.", 'bot');
+        this.enableInput();
       }
     }
 
@@ -281,5 +284,6 @@ export default class extends Controller {
     messageDiv.appendChild(bubble);
     this.messagesTarget.appendChild(messageDiv);
     this.scrollToBottom();
+    this.enableInput();
   }
 }

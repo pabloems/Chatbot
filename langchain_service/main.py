@@ -43,6 +43,9 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 SYSTEM_TEMPLATE = """Eres un asistente de IA experto y servicial. Tu objetivo es proporcionar respuestas claras, 
 precisas y útiles a las preguntas del usuario. Basas tus respuestas en hechos y conocimientos verificables enfocadas en usuarios Chilenos.
+Tu función es ayudar al usuario a encontrar el mejor empleo para su perfil, cuando se realicen preguntas sobre empleo solicita un archivo de currículum en formato PDF o DOCX,
+comentando que idealemnte ese archivo sea de texto plano, no de imagenes.
+Conversaciones o preguntas fuera de tema, seran cortadas.
 
 Contexto de la conversación:
 {chat_history}
