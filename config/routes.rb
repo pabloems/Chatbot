@@ -9,4 +9,5 @@ Rails.application.routes.draw do
   # root "posts#index"
   root 'chatbot#index'
   post 'chatbot/ask', to: 'chatbot#ask'
+  post 'chatbot/search_jobs'
 end

@@ -6,10 +6,10 @@
     </svg>
   </button>
 
-  <div data-chat-agent-target="interface" class="hidden flex-col fixed bottom-24 right-5 w-80 h-96 md:w-96 bg-white rounded-lg shadow-xl z-50 overflow-hidden">
+  <div data-chat-agent-target="interface" style="width: 1000px; height: 800px;" class="hidden flex-col fixed bottom-24 right-5 w-80 h-96 md:w-96 bg-white rounded-lg shadow-xl z-50 overflow-hidden">
     <div class="bg-blue-500 text-white px-4 py-3 flex justify-between items-center">
       <span class="font-medium">Chat AI Agent</span>
-      <button data-action="click->chat-agent#toggleChat" class="text-white focus:outline-none">
+      <button data-action="click->chat-agent#toggleChat" style="cursor: pointer;" class="text-white focus:outline-none">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -20,16 +20,39 @@
     <div data-chat-agent-target="messages" class="flex-1 h-[calc(100%-3rem)] overflow-y-auto p-4 space-y-2" style="overflow-y: auto;overflow-x: hidden;">
       <!-- messages will be added here dynamically -->
     </div>
-
+    
     <div class="border-t border-gray-200 p-3 flex items-center space-x-3" style="margin-top: auto;">
-      <input
-        data-chat-agent-target="input"
-        data-action="keydown->chat-agent#handleKeydown"
-        type="text"
-        placeholder="Cuéntanos en que te podemos ayudar..."
-        class="flex-grow px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+      <div style="display: flex; flex-direction: column; align-items: center; width: 90%;">
+        <!-- show selected file name-->
+        <span id="file-name" class="text-gray-700 text-sm"></span>
+        <input
+          data-chat-agent-target="input"
+          data-action="keydown->chat-agent#handleKeydown"
+          type="text"
+          style="width: 100%;"
+          placeholder="Indícanos tu región y adjunta tu currículum..."
+          class="flex-grow px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+      </div>
+    
+      <!-- Hidden input to select file -->
+      <input 
+        type="file"
+        data-chat-agent-target="fileInput"
+        data-action="change->chat-agent#handleFileSelect"
+        accept=".pdf,.docx"
+        class="hidden"
+        id="file-upload"
+      >
+      
+      <!-- Button to select file -->
+      <label for="file-upload" class="bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0" style="cursor: pointer;">
+        <span id="file-icon">📎</span>
+      </label>
+
       <button
         data-action="click->chat-agent#sendMessage"
+        style="cursor: pointer;"
         class="bg-blue-500 hover:bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0 focus:outline-none">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="22" y1="2" x2="11" y2="13"></line>
