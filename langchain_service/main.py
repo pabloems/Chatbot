@@ -149,10 +149,10 @@ async def extract_profile(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="Formato de archivo no soportado. Debe ser PDF, DOCX o DOC.")
 
         region_prompt = f"""
-        Eres un experto analizando currículums en Chile. 
+        Eres un experto analizando currículums en Chile.
         A partir del siguiente currículum, identifica la región de Chile donde reside o busca trabajo la persona.
         Si encuentras una región específica, devuélvela exactamente como aparece en el texto.
-        Si no encuentras una región específica pero hay información que sugiere una (como ciudad o zona), 
+        Si no encuentras una región específica pero hay información que sugiere una (como ciudad o zona),
         devuelve la región correspondiente.
         Si no hay información suficiente, responde "No especificada".
         Si un usuario proporciona indicaciones que no apuntan a buscar empleo, responde "No estoy entrenado para ello".

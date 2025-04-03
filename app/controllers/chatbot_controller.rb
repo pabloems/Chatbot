@@ -125,6 +125,7 @@ class ChatbotController < ApplicationController
       "viña del mar" => "Región de Valparaíso",
       "concepcion" => "Región del Biobío",
       "biobio" => "Región del Biobío",
+      "bio bio" => "Región del Biobío",
       "arica" => "Región de Arica y Parinacota",
       "parinacota" => "Región de Arica y Parinacota",
       "tarapacá" => "Región de Tarapacá",
