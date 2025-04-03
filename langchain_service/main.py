@@ -2,16 +2,16 @@ from fastapi import FastAPI, HTTPException, File, UploadFile, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.prompts import PromptTemplate
 from langchain.memory import ConversationBufferMemory
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 import io
 import PyPDF2
 import docx2txt
 import os
 import google.generativeai as genai
 import json
+import textract
+import tempfile
 
 app = FastAPI()
 class Message(BaseModel):
@@ -27,16 +27,42 @@ class ProfileRequest(BaseModel):
     file: UploadFile
     user_message: str
 
-def extract_text_from_pdf(file: io.BytesIO) -> str:
-    text = ""
-    pdf_reader = PyPDF2.PdfReader(file)
-    for page in pdf_reader.pages:
-        text += page.extract_text()
-    return text
+def extract_text_from_doc(file: io.BytesIO) -> str:
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.doc') as temp_file:
+            temp_file.write(file.getvalue())
+            temp_path = temp_file.name
+
+        try:
+            text = textract.process(temp_path).decode('utf-8', errors='ignore')
+            return text.strip()
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+    except Exception as e:
+        print(f"Error al extraer texto del archivo DOC: {str(e)}")
+        return ""
 
 def extract_text_from_docx(file: io.BytesIO) -> str:
-    text = docx2txt.process(file)
-    return text
+    try:
+        text = docx2txt.process(file)
+        return text.encode('utf-8', errors='ignore').decode('utf-8').strip()
+    except Exception as e:
+        print(f"Error al extraer texto del archivo DOCX: {str(e)}")
+        return ""
+
+def extract_text_from_pdf(file: io.BytesIO) -> str:
+    try:
+        text = ""
+        pdf_reader = PyPDF2.PdfReader(file)
+        for page in pdf_reader.pages:
+            page_text = page.extract_text() or ""
+            text += page_text.encode('utf-8', errors='ignore').decode('utf-8') + "\n"
+        return text.strip()
+    except Exception as e:
+        print(f"Error al extraer texto del PDF: {str(e)}")
+        return ""
 
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
@@ -112,12 +138,15 @@ async def extract_profile(file: UploadFile = File(...)):
     try:
         file_content = await file.read()
         file_io = io.BytesIO(file_content)
-        if file.filename.endswith(".pdf"):
+        file_extension = file.filename.lower().split('.')[-1]
+        if file_extension == 'pdf':
             resume_text = extract_text_from_pdf(file_io)
-        elif file.filename.endswith(".docx"):
+        elif file_extension == 'docx':
             resume_text = extract_text_from_docx(file_io)
+        elif file_extension == 'doc':
+            resume_text = extract_text_from_doc(file_io)
         else:
-            raise HTTPException(status_code=400, detail="Formato de archivo no soportado. Debe ser PDF o DOCX.")
+            raise HTTPException(status_code=400, detail="Formato de archivo no soportado. Debe ser PDF, DOCX o DOC.")
 
         region_prompt = f"""
         Eres un experto analizando currículums en Chile. 

@@ -1,6 +1,6 @@
 fastapi>=0.68.0
 uvicorn>=0.15.0
-protobuf              
+protobuf
 langchain
 langchain-google-genai>=0.0.5
 google-generativeai
@@ -9,3 +9,4 @@ python-docx>=0.8.11
 docx2txt>=0.8
 python-multipart>=0.0.5
 python-dotenv
+textract==1.6.5
